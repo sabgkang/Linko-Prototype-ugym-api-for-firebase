@@ -1,0 +1,4 @@
+APIs to implement
+1. for 動健康: 身分證號 to userId 和所有會員的 {身分證號，userId}
+2. for 動健康: Bridge API: to SQL(API by Rechard) asked for all user exercise in a date
+3. for 動健康: Bridge API: to NoSQL(API by Germos) asked for all user exercise in a date
