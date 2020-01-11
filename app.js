@@ -33,6 +33,16 @@ app.use(function (req, res, next) {
 //
 //   API:20 ?API=20&UserName&CourseId
 //          報名寫入 courseMember with  ["courseID", ["userName", "未繳費", "未簽到"]], 成功回應 "API:20 會員報名成功" 或 "API:20 會員報名失敗"
+//
+//   API:30 ?API=30
+//          讀取 couponData, 成功回應 JSON.stringify(couponData), 失敗回應 "API:30 couponData 讀取失敗"
+//   API:31 ?API=31
+//          讀取 couponHistory, 成功回應 JSON.stringify(couponHistory), 失敗回應 "API:31 couponHistory 讀取失敗"
+//   API:32 ?API=32
+//          讀取 couponMember, JSON.stringify(couponMember), 失敗回應 "API:32 couponHistory 讀取失敗"
+//
+//   API:40 ?API=40&UserName&CouponId
+//          報名寫入 couponMember with  ["courseID", ["userName", "已使用", "未確認"]], 成功回應 "API:40 優惠券使用成功" 或 "API:40 優惠券使用失敗"
 
 app.get('/', function (req, res) {
   //console.log(req.query);
@@ -72,18 +82,28 @@ app.get('/', function (req, res) {
     case "20":
       console.log("呼叫 API:20 報名寫入 courseMember");
       writeCourseMember();  
-      break;       
+      break;  
+    case "30":
+      console.log("呼叫 API:30 讀取 couponData");
+      readCouponData();  
+      break; 
+    case "31":
+      console.log("呼叫 API:31 讀取 couponHistory");
+      readCouponHistory();  
+      break;  
+    case "32":
+      console.log("呼叫 API:32 讀取 couponMember");
+      readCouponMember();  
+      break; 
+    case "40":
+      console.log("呼叫 API:40 使用寫入 couponMember");
+      writeCouponMember();  
+      break;      
     default:
       console.log("呼叫 未知API:"+inputParam.API);
       response.send("呼叫 未知API:"+inputParam.API);
   }
 
-// previous implement by if
-//  if (inputParam.API == "01") {
-//    console.log("add Member");
-//    addMember();   
-//    return 0;
-//  }
 });
 
 
@@ -218,6 +238,7 @@ function addAndWriteToFirebase() {
   });
 }
 
+// 課程管理 APIs ====================================================================
 function readCourseData(){
   // 讀取目前 courseData
   database.ref("users/林口運動中心/團課課程").once("value").then(function (snapshot) {
@@ -355,9 +376,151 @@ function writeCourseMember() {
 
     });
     
-    // API 回應成功
-    //response.send("API:20 "+inputParam.UserName+" 報名 "+inputParam.CourseId+" 成功"); 
+    
+  });    
+}
+// 課程管理 APIs END=================================================================
+
+// 優惠券管理 APIs ====================================================================
+function readCouponData(){
+  // 讀取目前 coupoData
+  database.ref("users/林口運動中心/優惠券").once("value").then(function (snapshot) {
+    //console.log(snapshot.val());
+    console.log("資料庫優惠券讀取完成");
+    var result = snapshot.val();
+    //console.log(result);
+    try {
+      response.send(result.現在優惠券);     
+    } catch (e) {
+      console.log("API:30 couponData 讀取失敗");
+      response.send("API:30 coupoData 讀取失敗");      
+      return 0;
+    }
+    console.log("API:30 coupoData 讀取成功");   
+  });  
+}
+
+function readCouponHistory(){
+  // 讀取目前 coupoData
+  database.ref("users/林口運動中心/優惠券").once("value").then(function (snapshot) {
+    //console.log(snapshot.val());
+    console.log("資料庫優惠券讀取完成");
+    var result = snapshot.val();
+    //console.log(result);
+    try {
+      response.send(result.過去優惠券);     
+    } catch (e) {
+      console.log("API:31 coupoHistory 讀取失敗");
+      response.send("API:31 coupoHistory 讀取失敗");      
+      return 0;
+    }
+    console.log("API:31 coupoHistory 讀取成功");   
+  });  
+}
+
+function readCouponMember(){
+  // 讀取目前 couponMember
+  database.ref("users/林口運動中心/優惠券管理").once("value").then(function (snapshot) {
+    //console.log(snapshot.val());
+    console.log("資料庫優惠券管理讀取完成");
+    var result = snapshot.val();
+    //console.log(result);
+    try {      
+      response.send(result.優惠券會員);
+    } catch (e) {
+      console.log("API:32 couponMember 讀取失敗");
+      response.send("API:32 couponMember 讀取失敗");      
+      return 0;
+    }
+    console.log("API:32 couponMember 讀取成功");
+       
+  });  
+}
+
+function writeCouponMember() {
+  // 檢查 UserName 和 CouponId ===========================================================
+  var errMsg = "";
+  //console.log(inputParam.UserName, inputParam.CourseId);
+  if (inputParam.UserName == undefined) {
+    console.log("UserName is undefined"); 
+    errMsg += "UserName is undefined";
+  }
+  
+  if (inputParam.CouponId == undefined) {
+    console.log("CouponId is undefined"); 
+    errMsg += " CouponId is undefined";
+  }
+  
+  if (errMsg != "") {
+    response.send(errMsg);  
+    return 0;
+  }
+  // ====================================================================================
+  
+  // 讀取目前 couponMember
+  database.ref("users/林口運動中心/優惠券管理").once("value").then(function (snapshot) {
+    //console.log(snapshot.val());
+    //console.log("資料庫優惠券管理讀取完成");
+    console.log("API:40 couponMember 讀取成功");
+    var result = snapshot.val();
+    //console.log(result);
+    try {      
+      couponMember=[];
+      couponMember = JSON.parse(result.優惠券會員);
+      //console.log(couponMember);   
+    } catch (e) {
+      console.log("API:40 couponMember 讀取失敗");
+      response.send("API:40 couponMember 讀取失敗");      
+      return 0;
+    }
+    
+    var couponIndex=-1;
+    var userInCoupon = false;
+    couponMember.forEach(function(coupon, index, array){
+      if (coupon[0]==inputParam.CouponId){
+        //console.log("coupon matched:", coupon[0]);
+        couponIndex = index;
+        if (coupon.length>1) {
+          for (var i=1; i< coupon.length; i++) {
+            //console.log(i, coupon[i]);
+            if (coupon[i][0]== inputParam.UserName){
+              //console.log(inputParam.UserName, "已經報名過 ", inputParam.CouponId);
+              //response.send("API:40 "+inputParam.UserName+" 已經報名過 "+inputParam.CouponId);   
+              userInCoupon = true;
+              break;
+            }
+          }
+        }
+      }
+    });
+
+    if (userInCoupon) {
+      console.log("API:40", inputParam.UserName, "已使用過 ", inputParam.CouponId);
+      response.send("API:40 "+inputParam.UserName+" 已使用過 "+inputParam.CouponId); 
+      return 0;
+    };
+    
+    // CouponId 還沒被 UserName 使用過
+    // push to courseMember    
+    couponMember[couponIndex].push([inputParam.UserName, "已使用", "未確認"]);
+    //console.log(couponMember);
+
+    // Write to Database
+    database.ref('users/林口運動中心/優惠券管理').set({
+      優惠券會員: JSON.stringify(couponMember),
+    }, function (error) {
+      if (error) {
+        console.log("API:40 會員使用優惠券失敗");
+        response.send("API:40 會員使用優惠券失敗");      
+      } else {
+        console.log("API:20 會員使用優惠券成功");
+        response.send("API:40 會員使用優惠券成功");
+      }
+
+    });
+    
     
     
   });    
 }
+// 優惠券管理 APIs END=================================================================
