@@ -33,6 +33,9 @@ app.use(function (req, res, next) {
 //   API:12 ?API=12
 //          讀取 courseMember, JSON.stringify(courseMember), 失敗回應 "API:12 courseHistory 讀取失敗"
 //
+//   API:13 ?API=13&UserId=U10...CDEF
+//          從 UserId 查得 PhoneNumber
+//
 //   API:20 ?API=20&UserName&CourseId&userId&phoneNumber
 //          報名寫入 courseMember with  ["courseID", ["userName", "未繳費", "未簽到"]], 成功回應 "API:20 會員報名成功" 或 "API:20 會員報名失敗"
 //
@@ -80,7 +83,11 @@ app.get('/', function (req, res) {
     case "12":
       console.log("呼叫 API:12 讀取 courseMember");
       readCourseMember();  
-      break; 
+      break;
+    case "13":
+      console.log("呼叫 API:13 讀取 courseMember");
+      getUserPhoneNUmber();  
+      break;      
     case "20":
       console.log("呼叫 API:20 報名寫入 courseMember");
       writeCourseMember();  
@@ -295,6 +302,37 @@ function readCourseMember(){
     }
     console.log("API:12 courseMember 讀取成功");
        
+  });  
+}
+
+
+function getUserPhoneNUmber() {
+  // 讀取目前會員資料
+  database.ref("users/林口運動中心/客戶管理").once("value").then(function (snapshot) {
+    //console.log(snapshot.val());
+    console.log("資料庫會員資料讀取完成");
+    var result = snapshot.val();
+    
+    try {
+      memberData = JSON.parse(result.會員資料);
+      //console.log(memberData);
+    } catch (e) {
+      console.log("API:13 讀取資料庫失敗");
+      response.send("API:13 讀取資料庫失敗");      
+      return 0;
+    }
+    
+    var userFound=false;
+    memberData.forEach(function(member, index, array){
+     if (member[6] == inputParam.UserId) {
+       response.send(member[3]);
+       userFound = true;
+       return 0;
+     }
+    });
+    
+    if (!userFound) response.send("API:13 找不到 "+inputParam.UserId); 
+    
   });  
 }
 
