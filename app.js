@@ -1,4 +1,4 @@
-var version ="V.05";
+var version ="V.51";
 
 var express = require('express');
 var app = express();
@@ -33,7 +33,7 @@ app.use(function (req, res, next) {
 //   API:12 ?API=12
 //          讀取 courseMember, JSON.stringify(courseMember), 失敗回應 "API:12 courseHistory 讀取失敗"
 //
-//   API:20 ?API=20&UserName&CourseId
+//   API:20 ?API=20&UserName&CourseId&userId&phoneNumber
 //          報名寫入 courseMember with  ["courseID", ["userName", "未繳費", "未簽到"]], 成功回應 "API:20 會員報名成功" 或 "API:20 會員報名失敗"
 //
 //   API:30 ?API=30
@@ -299,7 +299,7 @@ function readCourseMember(){
 }
 
 function writeCourseMember() {
-  // 檢查 UserName 和 CourseId ===========================================================
+  // 檢查 UserName, CourseId, UserId, PhoneNumber==============================================
   var errMsg = "";
   //console.log(inputParam.UserName, inputParam.CourseId);
   if (inputParam.UserName == undefined) {
@@ -310,6 +310,16 @@ function writeCourseMember() {
   if (inputParam.CourseId == undefined) {
     console.log("CourseId is undefined"); 
     errMsg += " CourseId is undefined";
+  }
+  
+  if (inputParam.UserId == undefined) {
+    console.log("UserId is undefined"); 
+    errMsg += "UserId is undefined";
+  }
+  
+  if (inputParam.PhoneNumber == undefined) {
+    console.log("PhoneNumber is undefined"); 
+    errMsg += " PhoneNumber is undefined";
   }
   
   if (errMsg != "") {
@@ -344,7 +354,7 @@ function writeCourseMember() {
         if (course.length>1) {
           for (var i=1; i< course.length; i++) {
             //console.log(i, course[i]);
-            if (course[i][0]== inputParam.UserName){
+            if (course[i][4]== inputParam.PhoneNumber){
               //console.log(inputParam.UserName, "已經報名過 ", inputParam.CourseId);
               //response.send("API:20 "+inputParam.UserName+" 已經報名過 "+inputParam.CourseId);   
               userInCourse = true;
@@ -362,7 +372,7 @@ function writeCourseMember() {
     };
     // CourseId 還沒被 UserName 報名過
     // push to courseMember    
-    courseMember[courseIndex].push([inputParam.UserName, "未繳費", "未簽到"]);
+    courseMember[courseIndex].push([inputParam.UserName, "未繳費", "未簽到", inputParam.UserId, inputParam.PhoneNumber]);
 
     // Write to Database
     database.ref('users/林口運動中心/課程管理').set({
