@@ -1,3 +1,5 @@
+var version ="V.05";
+
 var express = require('express');
 var app = express();
 var port = process.env.PORT || 5000
@@ -16,7 +18,7 @@ app.use(function (req, res, next) {
 });
 
 //測試時用 browser 訪問以下 URL
-//http://localhost:5000/?API=01&UserId=12345&Name=小王&Gender=男&Birth=2019-01-01&Phone=095555555&ID=A120000000&Address=新竹市 東區 中央路
+//http://localhost:5000/?API=01&UserId=U1001&Name=小王&Gender=男&Height=170cm&Birth=2019-01-01&Phone=095555555&ID=A120000000&Address=新竹市 東區 中央路&picUrl=www.google.com
 
 // 處理 API
 //   API:00 ?API=00&UserId=Uxxx..xxx 
@@ -146,7 +148,7 @@ function checkMember(){
     }
     
     memberData.forEach(function(member, index, array){
-     if (member[1] == inputParam.UserId) {
+     if (member[6] == inputParam.UserId) {
        memberAlreadyExist = true;
      }
     });
@@ -179,7 +181,7 @@ function addMember() {
     // 檢查是否有相同的名字及 LineId
     memberAlreadyExist = false;
     memberData.forEach(function(member, index, array){
-     if (member[1] == inputParam.UserId) {
+     if (member[6] == inputParam.UserId) {
        memberAlreadyExist = true;
      }
     });   
@@ -194,30 +196,30 @@ function addMember() {
   });
 }
 
+//?API=01&UserId=U1001&Name=小王&Gender=男&Height=170cm&Birth=2019-01-01&Phone=095555555&ID=A120000000&Address=新竹市 東區 中央路&picURL=www.google.com
 //會員資料格式
 //[
 //  '盧小宏',
-//  'Tony',
 //  '男',
 //  '1966-03-03',
 //  '09XXXXXXXX',
 //  'A1XXXXXXXX',
 //  '新竹市',
-//  '180cm',
-//  'URL of LINE 頭像'
+//  'Tony',// LineId
+//  'www.xxx.com', // Line URL
 //]
 function addAndWriteToFirebase() {
   var dataToAdd =[];
   dataToAdd = [
     inputParam.Name,
-    inputParam.UserId,
     inputParam.Gender,
     inputParam.Birth,
     inputParam.Phone,
     inputParam.ID,
     inputParam.Address,
+    inputParam.UserId,    
+    inputParam.PicURL, 
     inputParam.Height,
-    inputParam.PicURL
   ];
 
   memberData.push(dataToAdd);
