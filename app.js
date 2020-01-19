@@ -287,7 +287,7 @@ function readCourseHistory(){
 }
 
 function readCourseMember(){
-  // 讀取目前 courseData
+  // 讀取目前 courseMember
   database.ref("users/林口運動中心/課程管理").once("value").then(function (snapshot) {
     //console.log(snapshot.val());
     //console.log("資料庫課程管理讀取完成");
@@ -336,99 +336,117 @@ function getUserPhoneNUmber() {
   });  
 }
 
+//?API=20&UserName=小林&CourseId=U0002&UserId=U12345678901234567890123456789012&PhoneNumber=0932000000
 function writeCourseMember() {
-  // 檢查 UserName, CourseId, UserId, PhoneNumber==============================================
+  
+  // 檢查 UserName, CourseId, UserId, PhoneNumber
   var errMsg = "";
-  //console.log(inputParam.UserName, inputParam.CourseId);
-  if (inputParam.UserName == undefined) {
-    console.log("UserName is undefined"); 
-    errMsg += "UserName is undefined";
-  }
+  if ( inputParam.UserName == undefined ||
+       inputParam.CourseId == undefined ||
+       inputParam.UserId == undefined   ||
+       inputParam.PhoneNumber == undefined )
+  {
+    console.log("API:20 參數錯誤"); 
+    response.send("API:20 參數錯誤");
+    return 1;
+  }  
+
+  更新課程及報名人數();
+}
+
+async function 更新課程及報名人數(){
+
+  var databaseRef = database.ref("users/林口運動中心/課程管理");
+  try {
+    const snapshot = await databaseRef.once('value');
+    const result = snapshot.val();
+    courseMember = JSON.parse(result.課程會員);   
+  } catch (e) {
+    console.log("API:20 courseMember 讀取失敗");
+    response.send("API:20 courseMember 讀取失敗"); 
+    return 1;
+  }  
   
-  if (inputParam.CourseId == undefined) {
-    console.log("CourseId is undefined"); 
-    errMsg += " CourseId is undefined";
-  }
-  
-  if (inputParam.UserId == undefined) {
-    console.log("UserId is undefined"); 
-    errMsg += "UserId is undefined";
-  }
-  
-  if (inputParam.PhoneNumber == undefined) {
-    console.log("PhoneNumber is undefined"); 
-    errMsg += " PhoneNumber is undefined";
-  }
-  
-  if (errMsg != "") {
-    response.send(errMsg);  
-    return 0;
-  }
-  // ====================================================================================
-  
-  // 讀取目前 courseData
-  database.ref("users/林口運動中心/課程管理").once("value").then(function (snapshot) {
-    //console.log(snapshot.val());
-    //console.log("資料庫課程管理讀取完成");
-    var result = snapshot.val();
-    //console.log(result);
-    try {      
-      courseMember=[];
-      courseMember = JSON.parse(result.課程會員);
-      //console.log(courseMember);   
-    } catch (e) {
-      console.log("API:20 courseMember 讀取失敗");
-      response.send("API:20 courseMember 讀取失敗");      
-      return 0;
-    }
-    console.log("API:20 courseMember 讀取成功");
-    
-    var courseIndex=-1;
-    var userInCourse = false;
-    courseMember.forEach(function(course, index, array){
-      if (course[0]==inputParam.CourseId ){
-        //console.log("Course matched:", course[0]);
-        courseIndex = index;
-        if (course.length>1) {
-          for (var i=1; i< course.length; i++) {
-            //console.log(i, course[i]);
-            if (course[i][4]== inputParam.PhoneNumber){
-              //console.log(inputParam.UserName, "已經報名過 ", inputParam.CourseId);
-              //response.send("API:20 "+inputParam.UserName+" 已經報名過 "+inputParam.CourseId);   
-              userInCourse = true;
-              break;
-            }
+  // 檢查是否已報名
+  var courseIndex=-1;
+  var userInCourse = false;
+  courseMember.forEach(function(course, index, array){
+    if (course[0]==inputParam.CourseId ){
+      //console.log("Course matched:", course[0]);
+      courseIndex = index;
+      if (course.length>1) {
+        for (var i=1; i< course.length; i++) {
+          //console.log(i, course[i]);
+          if (course[i][4]== inputParam.PhoneNumber){
+            //console.log(inputParam.UserName, "已經報名過 ", inputParam.CourseId);
+            //response.send("API:20 "+inputParam.UserName+" 已經報名過 "+inputParam.CourseId);   
+            userInCourse = true;
+            break;
           }
         }
       }
-    });
-
-    if (userInCourse) {
-      console.log(inputParam.UserName, "已經報名過 ", inputParam.CourseId);
-      response.send("API:20 "+inputParam.UserName+" 已經報名過 "+inputParam.CourseId); 
-      return 0;
-    };
-    // CourseId 還沒被 UserName 報名過
-    // push to courseMember    
-    courseMember[courseIndex].push([inputParam.UserName, "未繳費", "未簽到", inputParam.UserId, inputParam.PhoneNumber]);
-
-    // Write to Database
-    database.ref('users/林口運動中心/課程管理').set({
+    }
+  });
+  // 結束: 檢查是否已報名  
+   
+  // 已經報名過
+  if (userInCourse) {
+    console.log(inputParam.UserName, "已經報名過 ", inputParam.CourseId);
+    response.send("API:20 "+inputParam.UserName+" 已經報名過 "+inputParam.CourseId); 
+    return 1;
+  };
+  
+  // CourseId 還沒被 UserPhoneNumber 報名過
+  // push to courseMember    
+  courseMember[courseIndex].push([inputParam.UserName, "未繳費", "未簽到", inputParam.UserId, inputParam.PhoneNumber]);  
+  
+  databaseRef = database.ref("users/林口運動中心/課程管理");
+  try {
+    const snapshot = await databaseRef.set({
       課程會員: JSON.stringify(courseMember),
-    }, function (error) {
-      if (error) {
-        console.log("API:20 會員報名失敗");
-        response.send("API:20 會員報名失敗");      
-      } else {
-        console.log("API:20 會員報名成功");
-        response.send("API:20 會員報名成功");
-      }
-
-    });
-    
-    
-  });    
+    }); 
+  } catch (e) {
+    console.log("API:20 courseMember 寫入失敗");
+    response.send("API:20 courseMember 寫入失敗"); 
+    return 1;
+  }
+  
+  // 讀取 課程資料，
+  databaseRef = database.ref("users/林口運動中心/團課課程");
+  try {
+    const snapshot = await databaseRef.once('value');
+    const result = snapshot.val();
+    var courseData = JSON.parse(result.現在課程);
+    var courseHistory = JSON.parse(result.過去課程);     
+  }  catch (e) {
+    console.log("API:20 courseData 讀取失敗");
+    response.send("API:20 courseData 讀取失敗"); 
+    return 1;
+  }
+  
+  // 課程報名人數 加 1
+  courseData.forEach(function(course, index, array){
+    if (course[0]==inputParam.CourseId) {
+      course[7]= String(parseInt(course[7])+1);
+    }
+  });
+  //console.log(courseData);  
+  
+  // 將 課程資料 寫回資料庫
+  try {
+    const snapshot = await databaseRef.set({
+      現在課程: JSON.stringify(courseData),
+      過去課程: JSON.stringify(courseHistory),
+    }); 
+  } catch (e) {
+    console.log("API:20 courseData 寫入失敗");
+    response.send("API:20 courseData 寫入失敗"); 
+    return 1;
+  }  
+   
+  response.send("API:20 會員報名成功");
 }
+
 // 課程管理 APIs END=================================================================
 
 // 優惠券管理 APIs ====================================================================
