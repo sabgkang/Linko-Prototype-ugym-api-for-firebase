@@ -514,8 +514,8 @@ function writeCouponMember() {
        inputParam.UserId == undefined   ||
        inputParam.PhoneNumber == undefined )
   {
-    console.log("API:20 參數錯誤"); 
-    response.send("API:20 參數錯誤");
+    console.log("API:40 參數錯誤"); 
+    response.send("API:40 參數錯誤");
     return 1;
   }   
   // ====================================================================================
@@ -530,7 +530,7 @@ function writeCouponMember() {
     try {      
       couponMember=[];
       couponMember = JSON.parse(result.優惠券會員);
-      console.log(couponMember);   
+      //console.log(couponMember);   
     } catch (e) {
       console.log("API:40 couponMember 讀取失敗");
       response.send("API:40 couponMember 讀取失敗");      
