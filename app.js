@@ -36,8 +36,8 @@ app.use(function (req, res, next) {
 //   API:13 ?API=13&UserId=U10...CDEF
 //          從 UserId 查得 PhoneNumber
 //
-//   API:20 ?API=20&UserName&CourseId&userId&phoneNumber
-//          報名寫入 courseMember with  ["courseID", ["userName", "未繳費", "未簽到"]], 成功回應 "API:20 會員報名成功" 或 "API:20 會員報名失敗"
+//   API:20 ?API=20&UserName&CourseId&UserId&PhoneNumber
+//          報名寫入 courseMember with  ["courseID", ["userName", "未繳費", "未簽到", UserId, PhoneNumber]], 成功回應 "API:20 會員報名成功" 或 "API:20 會員報名失敗"
 //
 //   API:30 ?API=30
 //          讀取 couponData, 成功回應 JSON.stringify(couponData), 失敗回應 "API:30 couponData 讀取失敗"
@@ -46,8 +46,8 @@ app.use(function (req, res, next) {
 //   API:32 ?API=32
 //          讀取 couponMember, JSON.stringify(couponMember), 失敗回應 "API:32 couponHistory 讀取失敗"
 //
-//   API:40 ?API=40&UserName&CouponId
-//          報名寫入 couponMember with  ["courseID", ["userName", "已使用", "未確認"]], 成功回應 "API:40 優惠券使用成功" 或 "API:40 優惠券使用失敗"
+//   API:40 ?API=40&UserName&CouponId&UserId&PhoneNumber
+//          報名寫入 couponMember with  ["couponID", ["userName", "已使用", "未確認", UserId, PhoneNumber]], 成功回應 "API:40 優惠券使用成功" 或 "API:40 優惠券使用失敗"
 
 app.get('/', function (req, res) {
   //console.log(req.query);
@@ -506,23 +506,18 @@ function readCouponMember(){
 }
 
 function writeCouponMember() {
-  // 檢查 UserName 和 CouponId ===========================================================
+  
+  // 檢查 UserName, CouponId, UserId, PhoneNumber
   var errMsg = "";
-  //console.log(inputParam.UserName, inputParam.CourseId);
-  if (inputParam.UserName == undefined) {
-    console.log("UserName is undefined"); 
-    errMsg += "UserName is undefined";
-  }
-  
-  if (inputParam.CouponId == undefined) {
-    console.log("CouponId is undefined"); 
-    errMsg += " CouponId is undefined";
-  }
-  
-  if (errMsg != "") {
-    response.send(errMsg);  
-    return 0;
-  }
+  if ( inputParam.UserName == undefined ||
+       inputParam.CouponId == undefined ||
+       inputParam.UserId == undefined   ||
+       inputParam.PhoneNumber == undefined )
+  {
+    console.log("API:20 參數錯誤"); 
+    response.send("API:20 參數錯誤");
+    return 1;
+  }   
   // ====================================================================================
   
   // 讀取目前 couponMember
@@ -535,7 +530,7 @@ function writeCouponMember() {
     try {      
       couponMember=[];
       couponMember = JSON.parse(result.優惠券會員);
-      //console.log(couponMember);   
+      console.log(couponMember);   
     } catch (e) {
       console.log("API:40 couponMember 讀取失敗");
       response.send("API:40 couponMember 讀取失敗");      
@@ -551,7 +546,7 @@ function writeCouponMember() {
         if (coupon.length>1) {
           for (var i=1; i< coupon.length; i++) {
             //console.log(i, coupon[i]);
-            if (coupon[i][0]== inputParam.UserName){
+            if (coupon[i][4]== inputParam.PhoneNumber){
               //console.log(inputParam.UserName, "已經報名過 ", inputParam.CouponId);
               //response.send("API:40 "+inputParam.UserName+" 已經報名過 "+inputParam.CouponId);   
               userInCoupon = true;
@@ -568,9 +563,10 @@ function writeCouponMember() {
       return 0;
     };
     
+    console.log(couponIndex);
     // CouponId 還沒被 UserName 使用過
     // push to courseMember    
-    couponMember[couponIndex].push([inputParam.UserName, "已使用", "未確認"]);
+    couponMember[couponIndex].push([inputParam.UserName, "已使用", "未確認", inputParam.UserId, inputParam.PhoneNumber]);
     //console.log(couponMember);
 
     // Write to Database
